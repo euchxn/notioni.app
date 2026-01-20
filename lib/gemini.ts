@@ -1,11 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { TEMPLATE_GENERATION_PROMPT, GeneratedTemplate } from "./prompts";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
 export async function generateTemplate(
   userDescription: string
 ): Promise<GeneratedTemplate> {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const prompt = `${TEMPLATE_GENERATION_PROMPT}
