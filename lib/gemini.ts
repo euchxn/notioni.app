@@ -4,14 +4,28 @@ import { TEMPLATE_GENERATION_PROMPT, GeneratedTemplate } from "./prompts";
 export async function generateTemplate(
   userDescription: string
 ): Promise<GeneratedTemplate> {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.");
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const prompt = `${TEMPLATE_GENERATION_PROMPT}
 
 사용자 요청: ${userDescription}`;
 
-  const result = await model.generateContent(prompt);
+  let result;
+  try {
+    result = await model.generateContent(prompt);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Gemini API error:", errorMessage);
+    throw new Error(`Gemini API 호출 실패: ${errorMessage}`);
+  }
+
   const response = await result.response;
   const text = response.text();
 
