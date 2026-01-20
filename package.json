@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "@google/genai": "^1.37.0",
     "@notionhq/client": "^2.2.15",
     "next": "14.2.21",
     "react": "^18.3.1",

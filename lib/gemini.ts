@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { TEMPLATE_GENERATION_PROMPT, GeneratedTemplate } from "./prompts";
 
 export async function generateTemplate(
@@ -10,24 +10,29 @@ export async function generateTemplate(
     throw new Error("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `${TEMPLATE_GENERATION_PROMPT}
 
 사용자 요청: ${userDescription}`;
 
-  let result;
+  let response;
   try {
-    result = await model.generateContent(prompt);
+    response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Gemini API error:", errorMessage);
     throw new Error(`Gemini API 호출 실패: ${errorMessage}`);
   }
 
-  const response = await result.response;
-  const text = response.text();
+  const text = response.text ?? "";
+
+  if (!text) {
+    throw new Error("AI가 빈 응답을 반환했습니다. 다시 시도해주세요.");
+  }
 
   // JSON 파싱 시도
   try {
