@@ -32,8 +32,8 @@ export default function TemplateForm({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         어떤 템플릿을 만들어 드릴까요?
       </h2>
 
@@ -42,18 +42,18 @@ export default function TemplateForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="원하는 템플릿을 자유롭게 설명해주세요. 예: 주간 업무 관리 템플릿이 필요해요. 할일 체크리스트와 우선순위가 있었으면 좋겠어요."
-          className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+          className="w-full h-32 p-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 transition-colors"
           disabled={isLoading}
         />
 
         <div className="mt-4 flex justify-between items-center">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {description.length > 0 && `${description.length}자`}
           </span>
           <button
             type="submit"
             disabled={isLoading || description.trim().length < 10}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
@@ -87,14 +87,14 @@ export default function TemplateForm({
       </form>
 
       <div className="mt-6">
-        <p className="text-sm text-gray-600 mb-3">예시 프롬프트:</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">예시 프롬프트:</p>
         <div className="flex flex-wrap gap-2">
           {EXAMPLE_PROMPTS.map((example, index) => (
             <button
               key={index}
               type="button"
               onClick={() => handleExampleClick(example)}
-              className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+              className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               {example.slice(0, 25)}...
             </button>

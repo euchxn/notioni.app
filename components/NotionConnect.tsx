@@ -147,15 +147,15 @@ export default function NotionConnect({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           {isEditMode ? "변경사항 저장" : "노션에 템플릿 생성하기"}
         </h3>
         {!isEditMode && (
           <button
             onClick={() => setShowHelp(!showHelp)}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
             {showHelp ? "도움말 닫기" : "설정 방법?"}
           </button>
@@ -163,7 +163,7 @@ export default function NotionConnect({
       </div>
 
       {showHelp && !isEditMode && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 space-y-3">
+        <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 space-y-3">
           <div>
             <p className="font-semibold mb-1">1. Notion Integration 만들기</p>
             <ol className="list-decimal ml-4 space-y-1">
@@ -196,9 +196,9 @@ export default function NotionConnect({
             <p className="ml-4">
               페이지 URL에서 마지막 32자리가 페이지 ID입니다.
               <br />
-              <code className="bg-gray-200 px-1 rounded text-xs">
+              <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">
                 notion.so/페이지이름-
-                <span className="text-blue-600 font-bold">abc123def456...</span>
+                <span className="text-blue-600 dark:text-blue-400 font-bold">abc123def456...</span>
               </code>
             </p>
           </div>
@@ -207,7 +207,7 @@ export default function NotionConnect({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Notion API Key (Integration Secret)
           </label>
           <input
@@ -215,13 +215,13 @@ export default function NotionConnect({
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="secret_xxxxxxxxxxxxxxxxxxxxx"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
           />
         </div>
 
         {!isEditMode && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               페이지 ID (템플릿을 추가할 페이지)
             </label>
             <input
@@ -229,16 +229,16 @@ export default function NotionConnect({
               value={pageId}
               onChange={(e) => setPageId(e.target.value)}
               placeholder="abc123def456789..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
             />
           </div>
         )}
 
         {isEditMode && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
               <strong>수정 중인 페이지:</strong>{" "}
-              <code className="bg-blue-100 px-1 rounded">
+              <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
                 {editingState.pageId.slice(0, 8)}...
               </code>
             </p>
@@ -252,7 +252,7 @@ export default function NotionConnect({
             !apiKey.trim() ||
             (!isEditMode && !pageId.trim())
           }
-          className={`w-full px-4 py-3 text-white rounded-lg font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed ${
+          className={`w-full px-4 py-3 text-white rounded-lg font-medium transition-colors disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed ${
             isEditMode
               ? "bg-yellow-600 hover:bg-yellow-700"
               : "bg-blue-600 hover:bg-blue-700"
@@ -289,7 +289,7 @@ export default function NotionConnect({
           )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
           입력한 정보는 브라우저에 저장되며 서버에 저장되지 않습니다.
         </p>
       </div>
@@ -298,13 +298,13 @@ export default function NotionConnect({
         <div
           className={`mt-4 p-4 rounded-lg ${
             result.success
-              ? "bg-green-50 border border-green-200"
-              : "bg-red-50 border border-red-200"
+              ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800"
+              : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
           }`}
         >
           {result.success ? (
             <div>
-              <p className="text-green-800 font-medium">
+              <p className="text-green-800 dark:text-green-300 font-medium">
                 {result.message || "템플릿이 성공적으로 생성되었습니다!"}
               </p>
               {result.url && (
@@ -312,14 +312,14 @@ export default function NotionConnect({
                   href={result.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline mt-2 inline-block"
+                  className="text-blue-600 dark:text-blue-400 hover:underline mt-2 inline-block"
                 >
                   노션에서 확인하기 →
                 </a>
               )}
             </div>
           ) : (
-            <p className="text-red-800">{result.error}</p>
+            <p className="text-red-800 dark:text-red-300">{result.error}</p>
           )}
         </div>
       )}

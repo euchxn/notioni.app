@@ -149,10 +149,10 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <section className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
           AI로 노션 템플릿을 자동 생성하세요
         </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
           원하는 템플릿을 자연어로 설명하면, AI가 자동으로 노션 템플릿 구조를
           생성합니다. 생성된 템플릿은 바로 노션에 추가할 수 있습니다.
         </p>
@@ -166,7 +166,7 @@ export default function Home() {
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               mode === "create"
                 ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             새 템플릿 생성
@@ -176,7 +176,7 @@ export default function Home() {
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               mode === "edit"
                 ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             기존 페이지 수정
@@ -195,7 +195,7 @@ export default function Home() {
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
@@ -209,15 +209,15 @@ export default function Home() {
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${
                   editingState
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-green-100 text-green-800"
+                    ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300"
+                    : "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300"
                 }`}
               >
                 {editingState ? "기존 페이지 수정 중" : "새 템플릿"}
               </span>
               {/* 페이지 히스토리 경로 표시 */}
               {pageHistory.length > 0 && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   (하위 페이지 {pageHistory.length}단계)
                 </span>
               )}
@@ -226,14 +226,14 @@ export default function Home() {
               {pageHistory.length > 0 && (
                 <button
                   onClick={handleGoBack}
-                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   ← 상위 페이지로
                 </button>
               )}
               <button
                 onClick={handleReset}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               >
                 ← 처음으로
               </button>
@@ -242,8 +242,8 @@ export default function Home() {
 
           {/* 하위 페이지 로딩 오버레이 */}
           {isLoading && (
-            <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 shadow-xl flex items-center gap-3">
+            <div className="fixed inset-0 bg-black bg-opacity-30 dark:bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl flex items-center gap-3">
                 <svg
                   className="animate-spin h-5 w-5 text-blue-600"
                   xmlns="http://www.w3.org/2000/svg"
@@ -264,14 +264,14 @@ export default function Home() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <span className="text-gray-700">페이지 불러오는 중...</span>
+                <span className="text-gray-700 dark:text-gray-300">페이지 불러오는 중...</span>
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 {editingState ? "페이지 편집" : "미리보기"}
               </h3>
               <TemplateEditor
@@ -281,7 +281,7 @@ export default function Home() {
               />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 {editingState ? "노션에 저장" : "노션에 추가"}
               </h3>
               <NotionConnect
@@ -295,7 +295,7 @@ export default function Home() {
 
       {!template && !isLoading && mode === "create" && (
         <section className="mt-12">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
             이런 템플릿을 만들 수 있어요
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -318,13 +318,13 @@ export default function Home() {
             ].map((item, index) => (
               <div
                 key={index}
-                className="bg-white p-6 rounded-lg border border-gray-200 text-center"
+                className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 text-center transition-colors"
               >
                 <span className="text-4xl mb-3 block">{item.icon}</span>
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
                   {item.title}
                 </h4>
-                <p className="text-sm text-gray-500">{item.desc}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
               </div>
             ))}
           </div>

@@ -12,7 +12,12 @@
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:ai.google.dev)",
       "Bash(npm run build:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(git push:*)"
     ]
   }
 }

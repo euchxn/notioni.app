@@ -8,6 +8,8 @@ export const TEMPLATE_GENERATION_PROMPT = `당신은 노션 템플릿 생성 전
 - bulleted_list_item: 글머리 기호 목록
 - numbered_list_item: 번호 목록
 - to_do: 체크박스 (할일)
+- toggle: 토글 (접을 수 있는 내용)
+- code: 코드 블록
 - divider: 구분선
 - callout: 강조 박스
 - quote: 인용

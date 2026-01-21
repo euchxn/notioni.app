@@ -97,6 +97,23 @@ function convertBlockToNotion(block: TemplateBlock): object {
           rich_text: [{ type: "text", text: { content: block.content } }],
         },
       };
+    case "toggle":
+      return {
+        ...baseBlock,
+        type: "toggle",
+        toggle: {
+          rich_text: [{ type: "text", text: { content: block.content } }],
+        },
+      };
+    case "code":
+      return {
+        ...baseBlock,
+        type: "code",
+        code: {
+          rich_text: [{ type: "text", text: { content: block.content } }],
+          language: "plain text",
+        },
+      };
     default:
       return {
         ...baseBlock,
@@ -209,6 +226,8 @@ function convertNotionBlockToTemplate(block: {
     case "numbered_list_item":
     case "quote":
     case "callout":
+    case "toggle":
+    case "code":
       return {
         id: block.id,
         type: blockType,
@@ -429,6 +448,15 @@ function createBlockUpdateData(block: TemplateBlock): object {
       };
     case "quote":
       return { quote: { rich_text: richText } };
+    case "toggle":
+      return { toggle: { rich_text: richText } };
+    case "code":
+      return {
+        code: {
+          rich_text: richText,
+          language: "plain text",
+        },
+      };
     default:
       return { paragraph: { rich_text: richText } };
   }

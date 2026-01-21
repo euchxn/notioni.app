@@ -67,21 +67,21 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           노션 페이지 불러오기
         </h2>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
         >
           {showHelp ? "도움말 닫기" : "설정 방법?"}
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 space-y-3">
+        <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 space-y-3">
           <div>
             <p className="font-semibold mb-1">1. Notion Integration 만들기</p>
             <ol className="list-decimal ml-4 space-y-1">
@@ -114,8 +114,8 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
             <p className="ml-4">
               페이지 URL에서 마지막 32자리가 페이지 ID입니다.
               <br />
-              <code className="bg-gray-200 px-1 rounded text-xs">
-                notion.so/페이지이름-<span className="text-blue-600 font-bold">abc123def456...</span>
+              <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">
+                notion.so/페이지이름-<span className="text-blue-600 dark:text-blue-400 font-bold">abc123def456...</span>
               </code>
             </p>
           </div>
@@ -124,7 +124,7 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Notion API Key (Integration Secret)
           </label>
           <input
@@ -132,12 +132,12 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="secret_xxxxxxxxxxxxxxxxxxxxx"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             페이지 ID (수정할 페이지)
           </label>
           <input
@@ -145,12 +145,12 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
             value={pageId}
             onChange={(e) => setPageId(e.target.value)}
             placeholder="abc123def456789..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
           />
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
             {error}
           </div>
         )}
@@ -158,7 +158,7 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
         <button
           onClick={handleLoad}
           disabled={isLoading || !apiKey.trim() || !pageId.trim()}
-          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -189,7 +189,7 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
           )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
           입력한 정보는 브라우저에 저장되며 서버에 저장되지 않습니다.
         </p>
       </div>
