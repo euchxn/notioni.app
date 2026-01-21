@@ -11,7 +11,8 @@
       "Bash(npm install:*)",
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:ai.google.dev)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

@@ -19,7 +19,7 @@ export async function generateTemplate(
   let response;
   try {
     response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-flash-latest",
       contents: prompt,
     });
   } catch (error: unknown) {
