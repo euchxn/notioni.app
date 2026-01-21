@@ -1,24 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GeneratedTemplate } from "@/lib/prompts";
+import { GeneratedTemplate, TemplateBlock } from "@/lib/prompts";
+
+interface EditingState {
+  pageId: string;
+  originalBlocks: TemplateBlock[];
+  originalTitle: string;
+  originalIcon?: string;
+}
 
 interface NotionConnectProps {
   template: GeneratedTemplate;
+  editingState?: EditingState | null;
 }
 
 const STORAGE_KEY = "notion_settings";
 
-export default function NotionConnect({ template }: NotionConnectProps) {
+export default function NotionConnect({
+  template,
+  editingState,
+}: NotionConnectProps) {
   const [apiKey, setApiKey] = useState("");
   const [pageId, setPageId] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
     url?: string;
+    message?: string;
     error?: string;
   } | null>(null);
+
+  const isEditMode = !!editingState;
 
   // 로컬 스토리지에서 설정 불러오기
   useEffect(() => {
@@ -27,25 +41,36 @@ export default function NotionConnect({ template }: NotionConnectProps) {
       try {
         const { apiKey: savedKey, pageId: savedPageId } = JSON.parse(saved);
         if (savedKey) setApiKey(savedKey);
-        if (savedPageId) setPageId(savedPageId);
+        if (savedPageId && !isEditMode) setPageId(savedPageId);
       } catch (e) {
         // ignore
       }
     }
-  }, []);
+    // 편집 모드면 pageId 설정
+    if (editingState) {
+      setPageId(editingState.pageId);
+    }
+  }, [editingState, isEditMode]);
 
   // 설정 저장
   const saveSettings = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ apiKey, pageId }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ apiKey, pageId: isEditMode ? undefined : pageId })
+    );
   };
 
+  // 새 페이지 생성
   const handleCreate = async () => {
     if (!apiKey.trim() || !pageId.trim()) {
-      setResult({ success: false, error: "API 키와 페이지 ID를 모두 입력해주세요." });
+      setResult({
+        success: false,
+        error: "API 키와 페이지 ID를 모두 입력해주세요.",
+      });
       return;
     }
 
-    setIsCreating(true);
+    setIsProcessing(true);
     setResult(null);
     saveSettings();
 
@@ -71,7 +96,53 @@ export default function NotionConnect({ template }: NotionConnectProps) {
       console.error("Failed to create page:", error);
       setResult({ success: false, error: "페이지 생성에 실패했습니다." });
     } finally {
-      setIsCreating(false);
+      setIsProcessing(false);
+    }
+  };
+
+  // 기존 페이지 업데이트
+  const handleUpdate = async () => {
+    if (!apiKey.trim() || !editingState) {
+      setResult({
+        success: false,
+        error: "API 키가 필요합니다.",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setResult(null);
+    saveSettings();
+
+    try {
+      const response = await fetch("/api/notion/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notionApiKey: apiKey.trim(),
+          pageId: editingState.pageId,
+          title: template.title,
+          icon: template.icon,
+          originalBlocks: editingState.originalBlocks,
+          newBlocks: template.blocks,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setResult({
+          success: true,
+          message: "페이지가 성공적으로 업데이트되었습니다!",
+        });
+      } else {
+        setResult({ success: false, error: data.error });
+      }
+    } catch (error) {
+      console.error("Failed to update page:", error);
+      setResult({ success: false, error: "페이지 업데이트에 실패했습니다." });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -79,17 +150,19 @@ export default function NotionConnect({ template }: NotionConnectProps) {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          노션에 템플릿 생성하기
+          {isEditMode ? "변경사항 저장" : "노션에 템플릿 생성하기"}
         </h3>
-        <button
-          onClick={() => setShowHelp(!showHelp)}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          {showHelp ? "도움말 닫기" : "설정 방법?"}
-        </button>
+        {!isEditMode && (
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {showHelp ? "도움말 닫기" : "설정 방법?"}
+          </button>
+        )}
       </div>
 
-      {showHelp && (
+      {showHelp && !isEditMode && (
         <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 space-y-3">
           <div>
             <p className="font-semibold mb-1">1. Notion Integration 만들기</p>
@@ -124,7 +197,8 @@ export default function NotionConnect({ template }: NotionConnectProps) {
               페이지 URL에서 마지막 32자리가 페이지 ID입니다.
               <br />
               <code className="bg-gray-200 px-1 rounded text-xs">
-                notion.so/페이지이름-<span className="text-blue-600 font-bold">abc123def456...</span>
+                notion.so/페이지이름-
+                <span className="text-blue-600 font-bold">abc123def456...</span>
               </code>
             </p>
           </div>
@@ -145,25 +219,46 @@ export default function NotionConnect({ template }: NotionConnectProps) {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            페이지 ID (템플릿을 추가할 페이지)
-          </label>
-          <input
-            type="text"
-            value={pageId}
-            onChange={(e) => setPageId(e.target.value)}
-            placeholder="abc123def456789..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
-          />
-        </div>
+        {!isEditMode && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              페이지 ID (템플릿을 추가할 페이지)
+            </label>
+            <input
+              type="text"
+              value={pageId}
+              onChange={(e) => setPageId(e.target.value)}
+              placeholder="abc123def456789..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+            />
+          </div>
+        )}
+
+        {isEditMode && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>수정 중인 페이지:</strong>{" "}
+              <code className="bg-blue-100 px-1 rounded">
+                {editingState.pageId.slice(0, 8)}...
+              </code>
+            </p>
+          </div>
+        )}
 
         <button
-          onClick={handleCreate}
-          disabled={isCreating || !apiKey.trim() || !pageId.trim()}
-          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          onClick={isEditMode ? handleUpdate : handleCreate}
+          disabled={
+            isProcessing ||
+            !apiKey.trim() ||
+            (!isEditMode && !pageId.trim())
+          }
+          className={`w-full px-4 py-3 text-white rounded-lg font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed ${
+            isEditMode
+              ? "bg-yellow-600 hover:bg-yellow-700"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          {isCreating ? (
+          {isProcessing ? (
             <span className="flex items-center justify-center gap-2">
               <svg
                 className="animate-spin h-4 w-4"
@@ -185,8 +280,10 @@ export default function NotionConnect({ template }: NotionConnectProps) {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              생성 중...
+              {isEditMode ? "저장 중..." : "생성 중..."}
             </span>
+          ) : isEditMode ? (
+            "변경사항 저장"
           ) : (
             "노션에 템플릿 생성"
           )}
@@ -208,7 +305,7 @@ export default function NotionConnect({ template }: NotionConnectProps) {
           {result.success ? (
             <div>
               <p className="text-green-800 font-medium">
-                템플릿이 성공적으로 생성되었습니다!
+                {result.message || "템플릿이 성공적으로 생성되었습니다!"}
               </p>
               {result.url && (
                 <a

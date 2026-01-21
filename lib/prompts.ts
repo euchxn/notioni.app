@@ -71,6 +71,7 @@ export interface TemplateBlock {
   type: string;
   content: string;
   checked?: boolean;
+  id?: string; // Notion block ID (for editing existing blocks)
 }
 
 export interface DatabaseProperty {
