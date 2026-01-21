@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TemplateForm from "@/components/TemplateForm";
-import TemplatePreview from "@/components/TemplatePreview";
+import TemplateEditor from "@/components/TemplateEditor";
 import NotionConnect from "@/components/NotionConnect";
 import { GeneratedTemplate } from "@/lib/prompts";
 
@@ -65,7 +65,7 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               미리보기
             </h3>
-            <TemplatePreview template={template} />
+            <TemplateEditor template={template} onUpdate={setTemplate} />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
