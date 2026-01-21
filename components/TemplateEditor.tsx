@@ -5,11 +5,13 @@ import {
   GeneratedTemplate,
   TemplateBlock,
   DatabaseProperty,
+  ChildPage,
 } from "@/lib/prompts";
 
 interface TemplateEditorProps {
   template: GeneratedTemplate;
   onUpdate: (template: GeneratedTemplate) => void;
+  onNavigateToChildPage?: (childPage: ChildPage) => void;
 }
 
 const BLOCK_TYPES = [
@@ -264,6 +266,7 @@ function DatabaseEditor({
 export default function TemplateEditor({
   template,
   onUpdate,
+  onNavigateToChildPage,
 }: TemplateEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -334,6 +337,28 @@ export default function TemplateEditor({
             <BlockPreview key={index} block={block} />
           ))}
         </div>
+
+        {/* 하위 페이지 목록 */}
+        {template.childPages && template.childPages.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <h4 className="text-sm font-medium text-gray-500 mb-3">하위 페이지</h4>
+            <div className="space-y-2">
+              {template.childPages.map((childPage) => (
+                <button
+                  key={childPage.id}
+                  onClick={() => onNavigateToChildPage?.(childPage)}
+                  className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left group"
+                >
+                  <span className="text-xl">{childPage.icon || "📄"}</span>
+                  <span className="flex-1 font-medium text-gray-800">{childPage.title}</span>
+                  <span className="text-gray-400 group-hover:text-gray-600 transition-colors">
+                    →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {template.database && (
           <div className="mt-6 pt-4 border-t border-gray-200">
@@ -441,6 +466,28 @@ export default function TemplateEditor({
           + 블록 추가
         </button>
       </div>
+
+      {/* 하위 페이지 */}
+      {template.childPages && template.childPages.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">하위 페이지</h4>
+          <div className="space-y-2">
+            {template.childPages.map((childPage) => (
+              <button
+                key={childPage.id}
+                onClick={() => onNavigateToChildPage?.(childPage)}
+                className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors text-left group"
+              >
+                <span className="text-xl">{childPage.icon || "📄"}</span>
+                <span className="flex-1 font-medium text-gray-800">{childPage.title}</span>
+                <span className="text-sm text-gray-400 group-hover:text-blue-600 transition-colors">
+                  들어가서 편집 →
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 데이터베이스 편집 */}
       <div className="mt-6">

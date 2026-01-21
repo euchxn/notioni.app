@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { GeneratedTemplate } from "@/lib/prompts";
 
 interface NotionPageLoaderProps {
-  onLoad: (template: GeneratedTemplate & { pageId: string }) => void;
+  onLoad: (template: GeneratedTemplate & { pageId: string }, apiKey: string) => void;
 }
 
 const STORAGE_KEY = "notion_settings";
@@ -54,7 +54,7 @@ export default function NotionPageLoader({ onLoad }: NotionPageLoaderProps) {
       const data = await response.json();
 
       if (response.ok) {
-        onLoad(data.template);
+        onLoad(data.template, apiKey.trim());
       } else {
         setError(data.error || "페이지를 불러오는데 실패했습니다.");
       }

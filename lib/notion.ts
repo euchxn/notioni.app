@@ -4,6 +4,7 @@ import {
   TemplateBlock,
   DatabaseSchema,
   DatabaseProperty,
+  ChildPage,
 } from "./prompts";
 
 export function createNotionClient(accessToken: string) {
@@ -270,11 +271,37 @@ export async function fetchNotionPage(
   });
 
   const blocks: TemplateBlock[] = [];
+  const childPages: ChildPage[] = [];
+
   for (const block of blocksResponse.results) {
     const notionBlock = block as { id: string; type: string; [key: string]: unknown };
-    const converted = convertNotionBlockToTemplate(notionBlock);
-    if (converted) {
-      blocks.push(converted);
+
+    // 하위 페이지 감지
+    if (notionBlock.type === "child_page") {
+      const childPageData = notionBlock.child_page as { title: string };
+      // 하위 페이지의 상세 정보 가져오기 (아이콘)
+      try {
+        const childPageInfo = (await notion.pages.retrieve({ page_id: notionBlock.id })) as {
+          id: string;
+          icon?: { type: string; emoji?: string };
+        };
+        childPages.push({
+          id: notionBlock.id,
+          title: childPageData.title,
+          icon: childPageInfo.icon?.type === "emoji" ? childPageInfo.icon.emoji : undefined,
+        });
+      } catch {
+        // 권한이 없는 경우 기본 정보만 추가
+        childPages.push({
+          id: notionBlock.id,
+          title: childPageData.title,
+        });
+      }
+    } else {
+      const converted = convertNotionBlockToTemplate(notionBlock);
+      if (converted) {
+        blocks.push(converted);
+      }
     }
   }
 
@@ -283,6 +310,7 @@ export async function fetchNotionPage(
     title,
     icon,
     blocks,
+    childPages: childPages.length > 0 ? childPages : undefined,
     // 데이터베이스는 별도 처리 필요 (복잡하므로 일단 제외)
   };
 }

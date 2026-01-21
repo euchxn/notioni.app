@@ -84,9 +84,17 @@ export interface DatabaseSchema {
   properties: Record<string, DatabaseProperty>;
 }
 
+// 하위 페이지 정보
+export interface ChildPage {
+  id: string;
+  title: string;
+  icon?: string;
+}
+
 export interface GeneratedTemplate {
   title: string;
   icon?: string;
   blocks: TemplateBlock[];
   database?: DatabaseSchema;
+  childPages?: ChildPage[];
 }
