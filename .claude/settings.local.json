@@ -17,7 +17,9 @@
       "Bash(findstr:*)",
       "Bash(npm run dev:*)",
       "Bash(timeout /t 5 /nobreak)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh pr list:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

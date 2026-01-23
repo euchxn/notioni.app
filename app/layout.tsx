@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import DarkModeProvider from "@/components/DarkModeProvider";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import AuthProvider from "@/components/AuthProvider";
+import AuthButton from "@/components/AuthButton";
 
 export const metadata: Metadata = {
   title: "Notion Template AI",
@@ -16,17 +18,22 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        <DarkModeProvider>
-          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
-            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Notion Template AI
-              </h1>
-              <DarkModeToggle />
-            </div>
-          </header>
-          <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
-        </DarkModeProvider>
+        <AuthProvider>
+          <DarkModeProvider>
+            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
+              <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Notion Template AI
+                </h1>
+                <div className="flex items-center gap-4">
+                  <AuthButton />
+                  <DarkModeToggle />
+                </div>
+              </div>
+            </header>
+            <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+          </DarkModeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
