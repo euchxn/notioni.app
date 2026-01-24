@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import DarkModeProvider from "@/components/DarkModeProvider";
 import DarkModeToggle from "@/components/DarkModeToggle";
@@ -31,7 +32,32 @@ export default function RootLayout({
                 </div>
               </div>
             </header>
-            <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+<main className="max-w-5xl mx-auto px-4 py-8 min-h-[calc(100vh-180px)]">
+              {children}
+            </main>
+            <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors">
+              <div className="max-w-5xl mx-auto px-4 py-6">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    © 2025 Notion Template AI
+                  </p>
+                  <div className="flex items-center gap-6">
+                    <Link
+                      href="/terms"
+                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                      이용약관
+                    </Link>
+                    <Link
+                      href="/privacy"
+                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                      개인정보처리방침
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </footer>
           </DarkModeProvider>
         </AuthProvider>
       </body>
