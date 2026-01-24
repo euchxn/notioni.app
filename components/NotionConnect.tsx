@@ -208,11 +208,11 @@ export default function NotionConnect({
       {/* OAuth 연동 상태 표시 */}
       {isNotionConnected && !useManualKey && (
         <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span className="text-sm text-green-800 dark:text-green-300">
-                {session?.user?.notionWorkspaceIcon && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+              <span className="text-sm text-green-800 dark:text-green-300 truncate">
+                {session?.user?.notionWorkspaceIcon && !session.user.notionWorkspaceIcon.startsWith("http") && (
                   <span className="mr-1">{session.user.notionWorkspaceIcon}</span>
                 )}
                 {session?.user?.notionWorkspaceName || "Notion"} 연결됨
@@ -220,7 +220,7 @@ export default function NotionConnect({
             </div>
             <button
               onClick={() => setUseManualKey(true)}
-              className="text-xs text-gray-500 dark:text-gray-400 hover:underline"
+              className="text-xs text-gray-500 dark:text-gray-400 hover:underline flex-shrink-0 whitespace-nowrap"
             >
               수동 입력으로 전환
             </button>
