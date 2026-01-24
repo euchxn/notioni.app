@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface NotionApiGuideModalProps {
   isOpen: boolean;
@@ -206,12 +207,15 @@ export default function NotionApiGuideModal({
                 </div>
               </div>
             ) : (
-              <img
-                src={step.image}
-                alt={step.imageAlt}
-                className="w-full aspect-video object-cover object-top"
-                onError={() => handleImageError(currentStep)}
-              />
+              <div className="relative aspect-video">
+                <Image
+                  src={step.image}
+                  alt={step.imageAlt}
+                  fill
+                  className="object-cover object-top"
+                  onError={() => handleImageError(currentStep)}
+                />
+              </div>
             )}
           </div>
 
