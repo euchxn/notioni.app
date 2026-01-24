@@ -48,9 +48,12 @@ model User {
   sessions      Session[]
   templates     Template[]
   
-  notionAccessToken String?
-  notionBotId       String?
-  notionWorkspaceId String?
+  notionAccessToken   String?
+  notionRefreshToken  String?
+  notionBotId         String?
+  notionWorkspaceId   String?
+  notionWorkspaceName String?
+  notionWorkspaceIcon String?
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

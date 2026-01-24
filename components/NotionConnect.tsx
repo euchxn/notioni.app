@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { GeneratedTemplate, TemplateBlock } from "@/lib/prompts";
+import NotionApiGuideModal from "./NotionApiGuideModal";
 
 interface EditingState {
   pageId: string;
@@ -21,10 +23,12 @@ export default function NotionConnect({
   template,
   editingState,
 }: NotionConnectProps) {
+  const { data: session } = useSession();
   const [apiKey, setApiKey] = useState("");
   const [pageId, setPageId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [useManualKey, setUseManualKey] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
     url?: string;
@@ -33,6 +37,7 @@ export default function NotionConnect({
   } | null>(null);
 
   const isEditMode = !!editingState;
+  const isNotionConnected = !!session?.user?.notionAccessToken;
 
   // 로컬 스토리지에서 설정 불러오기
   useEffect(() => {
@@ -54,18 +59,29 @@ export default function NotionConnect({
 
   // 설정 저장
   const saveSettings = () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ apiKey, pageId: isEditMode ? undefined : pageId })
-    );
+    if (useManualKey) {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ apiKey, pageId: isEditMode ? undefined : pageId })
+      );
+    }
   };
 
   // 새 페이지 생성
   const handleCreate = async () => {
-    if (!apiKey.trim() || !pageId.trim()) {
+    // OAuth 연동 시 pageId만 필요
+    if (!isNotionConnected || useManualKey) {
+      if (!apiKey.trim() || !pageId.trim()) {
+        setResult({
+          success: false,
+          error: "API 키와 페이지 ID를 모두 입력해주세요.",
+        });
+        return;
+      }
+    } else if (!pageId.trim()) {
       setResult({
         success: false,
-        error: "API 키와 페이지 ID를 모두 입력해주세요.",
+        error: "페이지 ID를 입력해주세요.",
       });
       return;
     }
@@ -75,14 +91,22 @@ export default function NotionConnect({
     saveSettings();
 
     try {
+      const body: Record<string, unknown> = {
+        template,
+        pageId: pageId.trim(),
+      };
+
+      // OAuth 연동 시 useOAuth 플래그, 아니면 API 키 전송
+      if (isNotionConnected && !useManualKey) {
+        body.useOAuth = true;
+      } else {
+        body.notionApiKey = apiKey.trim();
+      }
+
       const response = await fetch("/api/notion/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          template,
-          notionApiKey: apiKey.trim(),
-          pageId: pageId.trim(),
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -102,30 +126,41 @@ export default function NotionConnect({
 
   // 기존 페이지 업데이트
   const handleUpdate = async () => {
-    if (!apiKey.trim() || !editingState) {
-      setResult({
-        success: false,
-        error: "API 키가 필요합니다.",
-      });
-      return;
+    if (!isNotionConnected || useManualKey) {
+      if (!apiKey.trim() || !editingState) {
+        setResult({
+          success: false,
+          error: "API 키가 필요합니다.",
+        });
+        return;
+      }
     }
+
+    if (!editingState) return;
 
     setIsProcessing(true);
     setResult(null);
     saveSettings();
 
     try {
+      const body: Record<string, unknown> = {
+        pageId: editingState.pageId,
+        title: template.title,
+        icon: template.icon,
+        originalBlocks: editingState.originalBlocks,
+        newBlocks: template.blocks,
+      };
+
+      if (isNotionConnected && !useManualKey) {
+        body.useOAuth = true;
+      } else {
+        body.notionApiKey = apiKey.trim();
+      }
+
       const response = await fetch("/api/notion/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          notionApiKey: apiKey.trim(),
-          pageId: editingState.pageId,
-          title: template.title,
-          icon: template.icon,
-          originalBlocks: editingState.originalBlocks,
-          newBlocks: template.blocks,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -146,78 +181,110 @@ export default function NotionConnect({
     }
   };
 
+  // OAuth 연동 안내
+  const handleConnectNotion = () => {
+    window.location.href = "/api/auth/notion";
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           {isEditMode ? "변경사항 저장" : "노션에 템플릿 생성하기"}
         </h3>
-        {!isEditMode && (
+        {!isEditMode && (useManualKey || !isNotionConnected) && (
           <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            onClick={() => setShowGuideModal(true)}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
           >
-            {showHelp ? "도움말 닫기" : "설정 방법?"}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            설정 가이드
           </button>
         )}
       </div>
 
-      {showHelp && !isEditMode && (
-        <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 space-y-3">
-          <div>
-            <p className="font-semibold mb-1">1. Notion Integration 만들기</p>
-            <ol className="list-decimal ml-4 space-y-1">
-              <li>
-                <a
-                  href="https://www.notion.so/my-integrations"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  notion.so/my-integrations
-                </a>
-                {" "}접속
-              </li>
-              <li>&quot;New integration&quot; 클릭</li>
-              <li>이름 입력 후 생성</li>
-              <li>&quot;Internal Integration Secret&quot; 복사</li>
-            </ol>
-          </div>
-          <div>
-            <p className="font-semibold mb-1">2. 페이지에 Integration 연결</p>
-            <ol className="list-decimal ml-4 space-y-1">
-              <li>템플릿을 추가할 노션 페이지 열기</li>
-              <li>우측 상단 &quot;...&quot; 클릭 → &quot;Connections&quot;</li>
-              <li>만든 Integration 선택하여 연결</li>
-            </ol>
-          </div>
-          <div>
-            <p className="font-semibold mb-1">3. 페이지 ID 찾기</p>
-            <p className="ml-4">
-              페이지 URL에서 마지막 32자리가 페이지 ID입니다.
-              <br />
-              <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">
-                notion.so/페이지이름-
-                <span className="text-blue-600 dark:text-blue-400 font-bold">abc123def456...</span>
-              </code>
-            </p>
+      {/* OAuth 연동 상태 표시 */}
+      {isNotionConnected && !useManualKey && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              <span className="text-sm text-green-800 dark:text-green-300">
+                {session?.user?.notionWorkspaceIcon && (
+                  <span className="mr-1">{session.user.notionWorkspaceIcon}</span>
+                )}
+                {session?.user?.notionWorkspaceName || "Notion"} 연결됨
+              </span>
+            </div>
+            <button
+              onClick={() => setUseManualKey(true)}
+              className="text-xs text-gray-500 dark:text-gray-400 hover:underline"
+            >
+              수동 입력으로 전환
+            </button>
           </div>
         </div>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Notion API Key (Integration Secret)
-          </label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="secret_xxxxxxxxxxxxxxxxxxxxx"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
-          />
+      {/* OAuth 미연동 시 연동 유도 */}
+      {!isNotionConnected && !useManualKey && session && (
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+            Notion 계정을 연결하면 API 키 없이 바로 사용할 수 있어요.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleConnectNotion}
+              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            >
+              Notion 연결하기
+            </button>
+            <button
+              onClick={() => setUseManualKey(true)}
+              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:underline"
+            >
+              API 키로 계속
+            </button>
+          </div>
         </div>
+      )}
+
+      {/* 수동 입력 모드로 전환 시 */}
+      {useManualKey && isNotionConnected && (
+        <div className="mb-4">
+          <button
+            onClick={() => setUseManualKey(false)}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            ← 연결된 Notion 계정 사용
+          </button>
+        </div>
+      )}
+
+      {/* 가이드 모달 */}
+      <NotionApiGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
+
+      <div className="space-y-4">
+        {/* API 키 입력 - 수동 모드이거나 OAuth 미연동 시 */}
+        {(useManualKey || !isNotionConnected) && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Notion API Key (Integration Secret)
+            </label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="secret_xxxxxxxxxxxxxxxxxxxxx"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
+            />
+          </div>
+        )}
 
         {!isEditMode && (
           <div>
@@ -231,6 +298,11 @@ export default function NotionConnect({
               placeholder="abc123def456789..."
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm transition-colors"
             />
+            {isNotionConnected && !useManualKey && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                OAuth 인증 시 선택한 페이지에만 접근 가능합니다.
+              </p>
+            )}
           </div>
         )}
 
@@ -249,7 +321,7 @@ export default function NotionConnect({
           onClick={isEditMode ? handleUpdate : handleCreate}
           disabled={
             isProcessing ||
-            !apiKey.trim() ||
+            ((useManualKey || !isNotionConnected) && !apiKey.trim()) ||
             (!isEditMode && !pageId.trim())
           }
           className={`w-full px-4 py-3 text-white rounded-lg font-medium transition-colors disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed ${
@@ -289,9 +361,11 @@ export default function NotionConnect({
           )}
         </button>
 
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          입력한 정보는 브라우저에 저장되며 서버에 저장되지 않습니다.
-        </p>
+        {(useManualKey || !isNotionConnected) && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            입력한 정보는 브라우저에 저장되며 서버에 저장되지 않습니다.
+          </p>
+        )}
       </div>
 
       {result && (

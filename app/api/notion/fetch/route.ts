@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchNotionPage } from "@/lib/notion";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { notionApiKey, pageId } = (await request.json()) as {
-      notionApiKey: string;
+    const { notionApiKey, pageId, useOAuth } = (await request.json()) as {
+      notionApiKey?: string;
       pageId: string;
+      useOAuth?: boolean;
     };
 
-    if (!notionApiKey) {
+    // OAuth 사용 시 세션에서 토큰 가져오기
+    let accessToken = notionApiKey;
+    if (useOAuth) {
+      const session = await auth();
+      if (!session?.user?.notionAccessToken) {
+        return NextResponse.json(
+          { error: "Notion 계정이 연결되지 않았습니다." },
+          { status: 401 }
+        );
+      }
+      accessToken = session.user.notionAccessToken;
+    }
+
+    if (!accessToken) {
       return NextResponse.json(
         { error: "Notion API 키를 입력해주세요." },
         { status: 400 }
@@ -25,7 +40,7 @@ export async function POST(request: NextRequest) {
     // 페이지 ID 정리 (하이픈 제거)
     const cleanPageId = pageId.replace(/-/g, "").trim();
 
-    const template = await fetchNotionPage(notionApiKey, cleanPageId);
+    const template = await fetchNotionPage(accessToken, cleanPageId);
 
     return NextResponse.json({
       success: true,

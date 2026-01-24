@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateNotionBlocks, updateNotionPageProperties } from "@/lib/notion";
 import { TemplateBlock } from "@/lib/prompts";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,16 +12,31 @@ export async function POST(request: NextRequest) {
       icon,
       originalBlocks,
       newBlocks,
+      useOAuth,
     } = (await request.json()) as {
-      notionApiKey: string;
+      notionApiKey?: string;
       pageId: string;
       title: string;
       icon?: string;
       originalBlocks: TemplateBlock[];
       newBlocks: TemplateBlock[];
+      useOAuth?: boolean;
     };
 
-    if (!notionApiKey) {
+    // OAuth 사용 시 세션에서 토큰 가져오기
+    let accessToken = notionApiKey;
+    if (useOAuth) {
+      const session = await auth();
+      if (!session?.user?.notionAccessToken) {
+        return NextResponse.json(
+          { error: "Notion 계정이 연결되지 않았습니다." },
+          { status: 401 }
+        );
+      }
+      accessToken = session.user.notionAccessToken;
+    }
+
+    if (!accessToken) {
       return NextResponse.json(
         { error: "Notion API 키를 입력해주세요." },
         { status: 400 }
@@ -38,11 +54,11 @@ export async function POST(request: NextRequest) {
     const cleanPageId = pageId.replace(/-/g, "").trim();
 
     // 1. 페이지 제목/아이콘 업데이트
-    await updateNotionPageProperties(notionApiKey, cleanPageId, title, icon);
+    await updateNotionPageProperties(accessToken!, cleanPageId, title, icon);
 
     // 2. 블록 업데이트
     await updateNotionBlocks(
-      notionApiKey,
+      accessToken!,
       cleanPageId,
       originalBlocks,
       newBlocks
