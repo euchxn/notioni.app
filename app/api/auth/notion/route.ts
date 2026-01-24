@@ -3,14 +3,16 @@ import { NextResponse } from "next/server";
 // Notion OAuth 인증 페이지로 리다이렉트
 export async function GET() {
   const clientId = process.env.NOTION_CLIENT_ID;
-  const redirectUri = process.env.NOTION_REDIRECT_URI;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-  if (!clientId || !redirectUri) {
+  if (!clientId || !appUrl) {
     return NextResponse.json(
       { error: "Notion OAuth가 설정되지 않았습니다." },
       { status: 500 }
     );
   }
+
+  const redirectUri = `${appUrl}/api/auth/notion/callback`;
 
   const authUrl = new URL("https://api.notion.com/v1/oauth/authorize");
   authUrl.searchParams.set("client_id", clientId);

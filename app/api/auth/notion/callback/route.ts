@@ -24,11 +24,13 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.NOTION_CLIENT_ID;
   const clientSecret = process.env.NOTION_CLIENT_SECRET;
-  const redirectUri = process.env.NOTION_REDIRECT_URI;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret || !appUrl) {
     return NextResponse.redirect(new URL("/?error=config_error", request.url));
   }
+
+  const redirectUri = `${appUrl}/api/auth/notion/callback`;
 
   try {
     // code를 access_token으로 교환
