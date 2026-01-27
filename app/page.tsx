@@ -34,7 +34,7 @@ export default function Home() {
   const [notionApiKey, setNotionApiKey] = useState<string>("");
 
   // AI로 새 템플릿 생성
-  const handleGenerate = async (description: string) => {
+  const handleGenerate = async (description: string, image?: string, mimeType?: string) => {
     setIsLoading(true);
     setError(null);
     setTemplate(null);
@@ -42,10 +42,18 @@ export default function Home() {
     setMode("create");
 
     try {
+      const body: Record<string, string | undefined> = { description };
+      
+      // 이미지가 있으면 함께 전송
+      if (image && mimeType) {
+        body.image = image;
+        body.mimeType = mimeType;
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();

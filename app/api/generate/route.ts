@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateTemplate } from "@/lib/gemini";
+import { generateTemplate, generateTemplateFromImage } from "@/lib/gemini";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,8 +11,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { description } = await request.json();
+    const body = await request.json();
+    const { description, image, mimeType } = body;
 
+    // 이미지가 있는 경우 - 이미지 분석으로 템플릿 생성
+    if (image && mimeType) {
+      // base64 데이터에서 data:image/... 부분 제거
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+      
+      // 지원하는 이미지 형식 확인
+      const supportedFormats = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!supportedFormats.includes(mimeType)) {
+        return NextResponse.json(
+          { error: "지원하지 않는 이미지 형식입니다. (JPG, PNG, GIF, WebP만 지원)" },
+          { status: 400 }
+        );
+      }
+
+      // 이미지 크기 제한 (약 4MB - base64는 원본보다 33% 큼)
+      if (base64Data.length > 5.5 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: "이미지 크기가 너무 큽니다. (최대 4MB)" },
+          { status: 400 }
+        );
+      }
+
+      const template = await generateTemplateFromImage(
+        base64Data,
+        mimeType,
+        description // 추가 설명이 있으면 함께 전달
+      );
+
+      return NextResponse.json({ template });
+    }
+
+    // 이미지가 없는 경우 - 텍스트 설명으로 템플릿 생성
     if (!description || typeof description !== "string") {
       return NextResponse.json(
         { error: "템플릿 설명을 입력해주세요." },
