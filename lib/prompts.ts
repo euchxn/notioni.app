@@ -1,6 +1,8 @@
 export const TEMPLATE_GENERATION_PROMPT = `당신은 노션 템플릿 생성 전문가입니다. 사용자의 설명을 바탕으로 노션 블록 구조를 JSON 형식으로 생성해주세요.
 
 ## 지원하는 블록 타입:
+
+### 기본 블록:
 - heading_1: 대제목
 - heading_2: 중제목
 - heading_3: 소제목
@@ -11,9 +13,20 @@ export const TEMPLATE_GENERATION_PROMPT = `당신은 노션 템플릿 생성 전
 - toggle: 토글 (접을 수 있는 내용)
 - code: 코드 블록
 - divider: 구분선
-- callout: 강조 박스
+- callout: 강조 박스 (emoji 지정 가능)
 - quote: 인용
 - table: 테이블 (database로 생성)
+- bookmark: 북마크 링크
+- embed: 임베드 (URL)
+- image: 이미지 (URL)
+
+### 레이아웃 블록:
+- column_list: 컬럼 레이아웃 컨테이너 (children에 column 블록들 포함)
+- column: 개별 컬럼 (children에 블록들 포함)
+
+### 특수 블록:
+- table_of_contents: 목차
+- breadcrumb: 경로 표시
 
 ## 응답 형식:
 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
@@ -25,44 +38,82 @@ export const TEMPLATE_GENERATION_PROMPT = `당신은 노션 템플릿 생성 전
     {
       "type": "블록타입",
       "content": "텍스트 내용",
-      "checked": false  // to_do 타입일 경우만
+      "checked": false,  // to_do 타입일 경우만
+      "emoji": "💡",  // callout 타입일 경우 아이콘 지정
+      "url": "https://...",  // bookmark, embed, image 타입일 경우
+      "children": []  // column_list, column, toggle 타입일 경우 하위 블록
     }
   ],
   "database": {  // 테이블이 필요한 경우만 포함
     "title": "데이터베이스 제목",
     "properties": {
       "속성명": {
-        "type": "title | rich_text | checkbox | select | date | number",
-        "options": ["옵션1", "옵션2"]  // select 타입일 경우만
+        "type": "title | rich_text | checkbox | select | multi_select | date | number | url | email | phone_number | formula | relation | rollup | created_time | last_edited_time | status",
+        "options": ["옵션1", "옵션2"],  // select, multi_select 타입일 경우
+        "formula": "prop(\"속성명\") ...",  // formula 타입일 경우 수식
+        "format": "percent | number | dollar | ...",  // number, formula 타입일 경우 표시 형식
+        "statusGroups": {  // status 타입일 경우
+          "todo": ["시작 전"],
+          "in_progress": ["진행 중"],
+          "complete": ["완료"]
+        }
       }
-    }
+    },
+    "rows": [  // 초기 데이터 행 (선택사항)
+      {
+        "속성명": "값",
+        "체크박스속성": true,
+        "선택속성": "옵션1"
+      }
+    ]
   }
 }
 
-## 예시:
-사용자 입력: "주간 업무 관리 템플릿. 할일 체크리스트와 우선순위가 필요해"
-
-응답:
+## 컬럼 레이아웃 예시:
 {
-  "title": "주간 업무 관리",
-  "icon": "📋",
+  "type": "column_list",
+  "content": "",
+  "children": [
+    {
+      "type": "column",
+      "content": "",
+      "children": [
+        {"type": "heading_2", "content": "왼쪽 영역"},
+        {"type": "paragraph", "content": "왼쪽 내용"}
+      ]
+    },
+    {
+      "type": "column",
+      "content": "",
+      "children": [
+        {"type": "heading_2", "content": "오른쪽 영역"},
+        {"type": "paragraph", "content": "오른쪽 내용"}
+      ]
+    }
+  ]
+}
+
+## 습관 트래커 예시 (달성률 포함):
+{
+  "title": "습관 트래커",
+  "icon": "🎯",
   "blocks": [
-    {"type": "heading_1", "content": "주간 업무 관리"},
-    {"type": "divider", "content": ""},
-    {"type": "heading_2", "content": "이번 주 목표"},
-    {"type": "paragraph", "content": "이번 주 달성하고자 하는 목표를 작성하세요."},
-    {"type": "heading_2", "content": "할 일 목록"},
-    {"type": "to_do", "content": "업무 1", "checked": false},
-    {"type": "to_do", "content": "업무 2", "checked": false},
-    {"type": "to_do", "content": "업무 3", "checked": false}
+    {"type": "heading_1", "content": "습관 트래커"},
+    {"type": "divider", "content": ""}
   ],
   "database": {
-    "title": "업무 트래커",
+    "title": "습관 기록",
     "properties": {
-      "업무명": {"type": "title"},
-      "우선순위": {"type": "select", "options": ["높음", "중간", "낮음"]},
-      "상태": {"type": "select", "options": ["예정", "진행중", "완료"]},
-      "마감일": {"type": "date"}
+      "날짜": {"type": "title"},
+      "기상": {"type": "checkbox"},
+      "운동": {"type": "checkbox"},
+      "독서": {"type": "checkbox"},
+      "달성률": {
+        "type": "formula",
+        "formula": "round((if(prop(\"기상\"), 1, 0) + if(prop(\"운동\"), 1, 0) + if(prop(\"독서\"), 1, 0)) / 3 * 100)",
+        "format": "percent"
+      },
+      "기분": {"type": "select", "options": ["😊 좋음", "😐 보통", "😢 나쁨"]}
     }
   }
 }
@@ -77,8 +128,13 @@ export const IMAGE_ANALYSIS_PROMPT = `당신은 노션 템플릿 분석 및 재�
 3. 색상, 아이콘, 이모지가 보이면 최대한 반영하세요.
 4. 테이블/데이터베이스가 있다면 속성과 컬럼을 분석해주세요.
 5. 토글, 콜아웃 등 특수 블록도 인식해주세요.
+6. 2단 이상의 컬럼 레이아웃이 보이면 column_list와 column 블록을 사용하세요.
+7. 달성률, 진행률 등 계산된 값이 보이면 formula 속성을 사용하세요.
+8. 여러 개의 체크박스가 가로로 배치되어 있다면 각각 별도의 checkbox 속성으로 만드세요.
 
 ## 지원하는 블록 타입:
+
+### 기본 블록:
 - heading_1: 대제목
 - heading_2: 중제목
 - heading_3: 소제목
@@ -89,9 +145,20 @@ export const IMAGE_ANALYSIS_PROMPT = `당신은 노션 템플릿 분석 및 재�
 - toggle: 토글 (접을 수 있는 내용)
 - code: 코드 블록
 - divider: 구분선
-- callout: 강조 박스
+- callout: 강조 박스 (emoji 지정 가능)
 - quote: 인용
 - table: 테이블 (database로 생성)
+- bookmark: 북마크 링크
+- embed: 임베드 (URL)
+- image: 이미지 (URL)
+
+### 레이아웃 블록:
+- column_list: 컬럼 레이아웃 컨테이너 (children에 column 블록들 포함)
+- column: 개별 컬럼 (children에 블록들 포함)
+
+### 특수 블록:
+- table_of_contents: 목차
+- breadcrumb: 경로 표시
 
 ## 응답 형식:
 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
@@ -103,16 +170,79 @@ export const IMAGE_ANALYSIS_PROMPT = `당신은 노션 템플릿 분석 및 재�
     {
       "type": "블록타입",
       "content": "텍스트 내용",
-      "checked": false  // to_do 타입일 경우만
+      "checked": false,  // to_do 타입일 경우만
+      "emoji": "💡",  // callout 타입일 경우 아이콘 지정
+      "url": "https://...",  // bookmark, embed, image 타입일 경우
+      "children": []  // column_list, column, toggle 타입일 경우 하위 블록
     }
   ],
   "database": {  // 테이블이 이미지에 있는 경우만 포함
     "title": "데이터베이스 제목",
     "properties": {
       "속성명": {
-        "type": "title | rich_text | checkbox | select | date | number",
-        "options": ["옵션1", "옵션2"]  // select 타입일 경우만
+        "type": "title | rich_text | checkbox | select | multi_select | date | number | url | email | phone_number | formula | relation | rollup | created_time | last_edited_time | status",
+        "options": ["옵션1", "옵션2"],  // select, multi_select 타입일 경우
+        "formula": "prop(\"속성명\") ...",  // formula 타입일 경우 수식
+        "format": "percent | number | dollar | ...",  // number, formula 타입일 경우 표시 형식
+        "statusGroups": {  // status 타입일 경우
+          "todo": ["시작 전"],
+          "in_progress": ["진행 중"],
+          "complete": ["완료"]
+        }
       }
+    },
+    "rows": [  // 초기 데이터 행 (선택사항)
+      {
+        "속성명": "값",
+        "체크박스속성": true,
+        "선택속성": "옵션1"
+      }
+    ]
+  }
+}
+
+## 컬럼 레이아웃 예시:
+{
+  "type": "column_list",
+  "content": "",
+  "children": [
+    {
+      "type": "column",
+      "content": "",
+      "children": [
+        {"type": "heading_2", "content": "왼쪽 영역"},
+        {"type": "callout", "content": "버튼처럼 사용할 수 있는 콜아웃", "emoji": "▶️"}
+      ]
+    },
+    {
+      "type": "column",
+      "content": "",
+      "children": [
+        {"type": "heading_2", "content": "오른쪽 영역"},
+        {"type": "paragraph", "content": "데이터베이스가 여기에 표시됩니다"}
+      ]
+    }
+  ]
+}
+
+## 습관 트래커 예시 (가로 체크박스 + 달성률):
+{
+  "title": "습관 트래커",
+  "icon": "🎯",
+  "database": {
+    "title": "습관 기록",
+    "properties": {
+      "날짜": {"type": "title"},
+      "🌅 기상": {"type": "checkbox"},
+      "💪 운동": {"type": "checkbox"},
+      "📚 독서": {"type": "checkbox"},
+      "🧘 명상": {"type": "checkbox"},
+      "달성률": {
+        "type": "formula",
+        "formula": "round((if(prop(\"🌅 기상\"), 1, 0) + if(prop(\"💪 운동\"), 1, 0) + if(prop(\"📚 독서\"), 1, 0) + if(prop(\"🧘 명상\"), 1, 0)) / 4 * 100)",
+        "format": "percent"
+      },
+      "기분": {"type": "select", "options": ["😊 좋음", "😐 보통", "😢 나쁨"]}
     }
   }
 }
@@ -124,16 +254,32 @@ export interface TemplateBlock {
   content: string;
   checked?: boolean;
   id?: string; // Notion block ID (for editing existing blocks)
+  emoji?: string; // callout 아이콘
+  url?: string; // bookmark, embed, image URL
+  children?: TemplateBlock[]; // column_list, column, toggle의 하위 블록
+  language?: string; // code 블록 언어
 }
 
 export interface DatabaseProperty {
-  type: "title" | "rich_text" | "checkbox" | "select" | "date" | "number";
+  type: "title" | "rich_text" | "checkbox" | "select" | "multi_select" | "date" | "number" | "url" | "email" | "phone_number" | "formula" | "relation" | "rollup" | "created_time" | "last_edited_time" | "status";
   options?: string[];
+  formula?: string; // formula 타입일 경우 수식
+  format?: "percent" | "number" | "dollar" | "euro" | "pound" | "yen" | "won" | "yuan" | "rupee" | "ruble" | "peso" | "real"; // number, formula 표시 형식
+  statusGroups?: {
+    todo?: string[];
+    in_progress?: string[];
+    complete?: string[];
+  };
+}
+
+export interface DatabaseRow {
+  [key: string]: string | number | boolean | string[] | null;
 }
 
 export interface DatabaseSchema {
   title: string;
   properties: Record<string, DatabaseProperty>;
+  rows?: DatabaseRow[]; // 초기 데이터 행
 }
 
 // 하위 페이지 정보

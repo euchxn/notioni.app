@@ -4,6 +4,7 @@ import {
   TemplateBlock,
   DatabaseSchema,
   DatabaseProperty,
+  DatabaseRow,
   ChildPage,
 } from "./prompts";
 
@@ -86,7 +87,7 @@ function convertBlockToNotion(block: TemplateBlock): object {
         type: "callout",
         callout: {
           rich_text: [{ type: "text", text: { content: block.content } }],
-          icon: { emoji: "💡" },
+          icon: { emoji: block.emoji || "💡" },
         },
       };
     case "quote":
@@ -97,21 +98,95 @@ function convertBlockToNotion(block: TemplateBlock): object {
           rich_text: [{ type: "text", text: { content: block.content } }],
         },
       };
-    case "toggle":
-      return {
+    case "toggle": {
+      const toggleBlock: {
+        object: "block";
+        type: "toggle";
+        toggle: {
+          rich_text: Array<{ type: "text"; text: { content: string } }>;
+          children?: object[];
+        };
+      } = {
         ...baseBlock,
         type: "toggle",
         toggle: {
           rich_text: [{ type: "text", text: { content: block.content } }],
         },
       };
+      if (block.children && block.children.length > 0) {
+        toggleBlock.toggle.children = block.children.map(convertBlockToNotion);
+      }
+      return toggleBlock;
+    }
     case "code":
       return {
         ...baseBlock,
         type: "code",
         code: {
           rich_text: [{ type: "text", text: { content: block.content } }],
-          language: "plain text",
+          language: block.language || "plain text",
+        },
+      };
+    // 레이아웃 블록
+    case "column_list": {
+      const columns = block.children?.map(convertBlockToNotion) || [];
+      return {
+        ...baseBlock,
+        type: "column_list",
+        column_list: {
+          children: columns,
+        },
+      };
+    }
+    case "column": {
+      const columnChildren = block.children?.map(convertBlockToNotion) || [];
+      return {
+        ...baseBlock,
+        type: "column",
+        column: {
+          children: columnChildren,
+        },
+      };
+    }
+    // 특수 블록
+    case "table_of_contents":
+      return {
+        ...baseBlock,
+        type: "table_of_contents",
+        table_of_contents: {},
+      };
+    case "breadcrumb":
+      return {
+        ...baseBlock,
+        type: "breadcrumb",
+        breadcrumb: {},
+      };
+    case "bookmark":
+      return {
+        ...baseBlock,
+        type: "bookmark",
+        bookmark: {
+          url: block.url || "",
+          caption: block.content ? [{ type: "text", text: { content: block.content } }] : [],
+        },
+      };
+    case "embed":
+      return {
+        ...baseBlock,
+        type: "embed",
+        embed: {
+          url: block.url || "",
+        },
+      };
+    case "image":
+      return {
+        ...baseBlock,
+        type: "image",
+        image: {
+          type: "external",
+          external: {
+            url: block.url || "",
+          },
         },
       };
     default:
@@ -149,11 +224,75 @@ function convertDatabaseProperties(schema: DatabaseSchema) {
           },
         };
         break;
+      case "multi_select":
+        properties[name] = {
+          multi_select: {
+            options:
+              prop.options?.map((opt) => ({
+                name: opt,
+              })) || [],
+          },
+        };
+        break;
       case "date":
         properties[name] = { date: {} };
         break;
       case "number":
-        properties[name] = { number: {} };
+        properties[name] = {
+          number: {
+            format: prop.format || "number",
+          },
+        };
+        break;
+      case "url":
+        properties[name] = { url: {} };
+        break;
+      case "email":
+        properties[name] = { email: {} };
+        break;
+      case "phone_number":
+        properties[name] = { phone_number: {} };
+        break;
+      case "formula":
+        properties[name] = {
+          formula: {
+            expression: prop.formula || "",
+          },
+        };
+        break;
+      case "created_time":
+        properties[name] = { created_time: {} };
+        break;
+      case "last_edited_time":
+        properties[name] = { last_edited_time: {} };
+        break;
+      case "status":
+        properties[name] = {
+          status: {
+            options: [
+              ...(prop.statusGroups?.todo?.map((name) => ({ name, color: "default" })) || [{ name: "시작 전", color: "default" }]),
+              ...(prop.statusGroups?.in_progress?.map((name) => ({ name, color: "blue" })) || [{ name: "진행 중", color: "blue" }]),
+              ...(prop.statusGroups?.complete?.map((name) => ({ name, color: "green" })) || [{ name: "완료", color: "green" }]),
+            ],
+            groups: [
+              {
+                name: "To-do",
+                color: "gray",
+                option_ids: [], // Notion will auto-assign
+              },
+              {
+                name: "In progress", 
+                color: "blue",
+                option_ids: [],
+              },
+              {
+                name: "Complete",
+                color: "green",
+                option_ids: [],
+              },
+            ],
+          },
+        };
         break;
       default:
         properties[name] = { rich_text: {} };
@@ -187,14 +326,102 @@ export async function createNotionPage(
 
   // 데이터베이스가 있으면 생성
   if (template.database) {
-    await notion.databases.create({
+    const database = await notion.databases.create({
       parent: { page_id: page.id },
       title: [{ type: "text", text: { content: template.database.title } }],
       properties: convertDatabaseProperties(template.database) as never,
     });
+
+    // 초기 행(rows)이 있으면 추가
+    if (template.database.rows && template.database.rows.length > 0) {
+      for (const row of template.database.rows) {
+        await createDatabaseRow(notion, database.id, row, template.database.properties);
+      }
+    }
   }
 
   return page;
+}
+
+// 데이터베이스 행 생성
+async function createDatabaseRow(
+  notion: Client,
+  databaseId: string,
+  row: DatabaseRow,
+  schema: Record<string, DatabaseProperty>
+) {
+  const properties: Record<string, object> = {};
+
+  for (const [key, value] of Object.entries(row)) {
+    const propSchema = schema[key];
+    if (!propSchema) continue;
+
+    switch (propSchema.type) {
+      case "title":
+        properties[key] = {
+          title: [{ text: { content: String(value) } }],
+        };
+        break;
+      case "rich_text":
+        properties[key] = {
+          rich_text: [{ text: { content: String(value) } }],
+        };
+        break;
+      case "checkbox":
+        properties[key] = {
+          checkbox: Boolean(value),
+        };
+        break;
+      case "select":
+        properties[key] = {
+          select: { name: String(value) },
+        };
+        break;
+      case "multi_select":
+        properties[key] = {
+          multi_select: Array.isArray(value)
+            ? value.map((v) => ({ name: String(v) }))
+            : [{ name: String(value) }],
+        };
+        break;
+      case "number":
+        properties[key] = {
+          number: typeof value === "number" ? value : Number(value),
+        };
+        break;
+      case "url":
+        properties[key] = {
+          url: String(value),
+        };
+        break;
+      case "email":
+        properties[key] = {
+          email: String(value),
+        };
+        break;
+      case "phone_number":
+        properties[key] = {
+          phone_number: String(value),
+        };
+        break;
+      case "date":
+        properties[key] = {
+          date: { start: String(value) },
+        };
+        break;
+      case "status":
+        properties[key] = {
+          status: { name: String(value) },
+        };
+        break;
+      // formula, created_time, last_edited_time, relation, rollup은 읽기 전용이므로 설정 불가
+    }
+  }
+
+  await notion.pages.create({
+    parent: { database_id: databaseId },
+    properties: properties as never,
+  });
 }
 
 // Notion 블록을 우리 앱의 TemplateBlock 형식으로 변환
