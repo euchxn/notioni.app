@@ -33,6 +33,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           }}
         />
         {/* End Google Tag Manager */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-8D06EK7GRV"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="gtag-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-8D06EK7GRV');
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         {/* Google Tag Manager (noscript) */}
